@@ -1,6 +1,6 @@
 {
   "name": "markdown-streaming-parser-ts",
-  "version": "1.0.0",
+  "version": "0.0.1",
   "description": "Fast and efficient streaming markdown parser.",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
