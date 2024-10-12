@@ -1,4 +1,4 @@
-import { Transform, TransformCallback } from "stream"
+import { Transform, TransformCallback } from "stream";
 
 class MarkdownStreamParser extends Transform {
 	private buffer: string;
@@ -8,7 +8,11 @@ class MarkdownStreamParser extends Transform {
 		this.buffer = "";
 	}
 
-	_transform(chunk: string, encoding: BufferEncoding, callback: TransformCallback): void {
+	_transform(
+		chunk: string,
+		encoding: BufferEncoding,
+		callback: TransformCallback,
+	): void {
 		this.buffer += chunk.toString();
 
 		// TODO: Main parser implementation.
