@@ -7,10 +7,12 @@
   "scripts": {
     "build": "tsc",
     "test": "jest",
+    "prepublishOnly": "npm run build",
     "publish": "npm run build && npm test"
   },
-  "keywords": [],
+  "keywords": ["markdown", "parser", "streaming", "ts", "fast"],
   "author": "Roshan Swain",
+  "email": "swainroshan001@gmail.com",
   "license": "ISC",
   "files": [
     "dist"

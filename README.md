@@ -38,6 +38,28 @@ Key characteristics of state machine:
 2. Transitions: Rules for moviing between states based on the input.
 3. Actions: Operations performed when entering, exiting or within a state.
 
+## USAGE
+
+```TS
+import { MarkdownStreamParser } from "markdown-streaming-parser-ts";
+import {Readable} from "stream";
+
+const input = '# Hello\nWorld!\n`code`\n*emphasis*';
+const readable = new Readable();
+readable._read = () => {};
+readable.push(input);
+readable.push(null);
+const parser = new MarkdownStreamParser();
+
+readable.pipe(parser)
+.on('data', (chunk) => {
+    console.log(JSON.parse(chunk));
+})
+.on('end', () => {
+    console.log('Parsing complete');
+})
+```
+
 ## USAGE EXAMPLES
 
 - [] Simple ChatGPT LLM streaming markdown and rendering on html.

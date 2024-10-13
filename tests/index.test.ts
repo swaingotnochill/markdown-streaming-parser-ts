@@ -1,4 +1,10 @@
-import MarkdownStreamParser from "../src/index";
+/** 
+Author: Roshan Swain
+Email: swainroshan@gmail.com
+*/
+
+
+import { MarkdownStreamParser } from "../src/MarkdownStreamingParser";
 import { Readable } from "stream";
 import { Token, TokenType } from "../src/token";
 
@@ -28,7 +34,6 @@ describe('MarkdownStreamParser', () => {
 				result.push(JSON.parse(chunk));
 			})
 			.on('end', () => {
-				console.log("DEBUG: Result is : \n", result);
 				expect(result).toEqual(expected);
 				done();
 			});
