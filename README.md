@@ -13,7 +13,8 @@ This is a nascent project and not ready to be used in development yet. Wait for 
 - [] Recursive descent parser that process the tokens to generate AST.
 - [] Single pass approach to minimize the processing time.
 - [] AST walker that converts parsed markdown to HTML.
-- [] String builder for efficient HTML generation. - [] Lookup tables for common markdown patterns to minimize processing time.
+- [] String builder for efficient HTML generation.
+- [] Lookup tables for common markdown patterns to minimize processing time.
 - [] Character level parsing instead of regex for performance.
 - [] Minimize object creations and garbage collection pauses by using primitive values and avoiding extra abstractions.
 
