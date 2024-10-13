@@ -4,6 +4,8 @@ Email: swainroshan@gmail.com
 */
 
 import { Transform, TransformCallback, TransformOptions } from "stream";
+import { Tokenizer } from "./tokenizer";
+import { Token } from "./token";
 
 /**
  * Class: MarkdownStreamParser.
@@ -32,17 +34,17 @@ import { Transform, TransformCallback, TransformOptions } from "stream";
  */
 class MarkdownStreamParser extends Transform {
 	private buffer: string;
+	private tokenizer: Tokenizer;
 
 	constructor(options?: TransformOptions) {
 		super(options);
+		this.tokenizer = new Tokenizer();
 		this.buffer = "";
 	}
 
 	_transform(chunk: any, encoding: BufferEncoding, callback: TransformCallback): void {
 		this.buffer += chunk.toString();
-		
 		this.processBuffer();
-
 		callback();	
 	}
             
@@ -52,13 +54,9 @@ class MarkdownStreamParser extends Transform {
 	}
 
 	private processBuffer(isEnd: boolean = false): void {
-		// TODO: Implement the actual markdown parsing logic here.
-		// For now we will just log the buffer content.
-
-		if(this.buffer.length > 0) {
-			this.push(this.buffer);
-			this.buffer = "";
-		}
+		const tokens = this.tokenizer.tokenize(this.buffer, isEnd);
+		tokens.forEach(token => this.push(JSON.stringify(token) + '\n'));
+		this.buffer = this.tokenizer.getRemainingBuffer();
 	}
 }
 

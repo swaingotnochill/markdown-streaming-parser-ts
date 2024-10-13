@@ -1,25 +1,35 @@
 import MarkdownStreamParser from "../src/index";
 import { Readable } from "stream";
+import { Token, TokenType } from "../src/token";
 
 describe('MarkdownStreamParser', () => {
-	it('should parse through markdown content without transformation', (done) => {
-		const input = '# Hello\nWorld!';
-		const expected = '# Hello\nWorld!';
+	it('should tokenize markdown content', (done) => {
+		const input = '# Hello\nWorld!\n```code```\n*emphasis*';
+
+		// Returns an array of tokens after tokenizer.
+		const expected =  [
+			{type: TokenType.HEADER, content: '# Hello' },
+			{type: TokenType.TEXT, content: '\nWorld!\n'},
+			{type: TokenType.CODE_BLOCK, content: '```code```'},
+			{type: TokenType.TEXT, content: '\n'},
+			{type: TokenType.EMPHASIS, content: '*emphasis*' },
+		];
 
 		const readable = new Readable();
-		readable._read = () => {}; // _read is required but we don't need it for this test.
+		readable._read = () => {}; 	
 		readable.push(input);
 		readable.push(null); // Mark the end of the stream.
 
 		const parser = new MarkdownStreamParser();
-		let result = '';
+		let result: Token[] = [];
 
 		readable.pipe(parser)
 			.on('data', (chunk) => {
-				result += chunk.toString();
+				result.push(JSON.parse(chunk));
 			})
 			.on('end', () => {
-				expect(result).toBe(expected);
+				console.log("DEBUG: Result is : \n", result);
+				expect(result).toEqual(expected);
 				done();
 			});
 	});

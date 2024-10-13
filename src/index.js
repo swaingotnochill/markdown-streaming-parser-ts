@@ -4,6 +4,7 @@ Author: Roshan Swain
 Email: swainroshan@gmail.com
 */
 const stream_1 = require("stream");
+const tokenizer_1 = require("./tokenizer");
 /**
  * Class: MarkdownStreamParser.
  * Extends Node.js Transform stream.
@@ -32,6 +33,7 @@ const stream_1 = require("stream");
 class MarkdownStreamParser extends stream_1.Transform {
     constructor(options) {
         super(options);
+        this.tokenizer = new tokenizer_1.Tokenizer();
         this.buffer = "";
     }
     _transform(chunk, encoding, callback) {
@@ -44,12 +46,9 @@ class MarkdownStreamParser extends stream_1.Transform {
         callback();
     }
     processBuffer(isEnd = false) {
-        // TODO: Implement the actual markdown parsing logic here.
-        // For now we will just log the buffer content.
-        if (this.buffer.length > 0) {
-            this.push(this.buffer);
-            this.buffer = "";
-        }
+        const tokens = this.tokenizer.tokenize(this.buffer, isEnd);
+        tokens.forEach(token => this.push(JSON.stringify(token) + '\n'));
+        this.buffer = this.tokenizer.getRemainingBuffer();
     }
 }
 module.exports = MarkdownStreamParser;

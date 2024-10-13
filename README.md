@@ -6,8 +6,8 @@ This is a nascent project and not ready to be used in development yet. Wait for 
 
 ## DESIGN
 
-- [] Using Node.js built-in Transform stream for efficient processing of large files.
-- [] Chunking the input stream to minimize memory usage.
+- [x] Using Node.js built-in Transform stream for efficient processing of large files.
+- [x] Chunking the input stream to minimize memory usage.
 - [] Fast tokenizer that processes the input stream character by character.
 - [] State machine approach for efficient token recognition.
 - [] Recursive descent parser that process the tokens to generate AST.
@@ -27,6 +27,16 @@ This is a nascent project and not ready to be used in development yet. Wait for 
 - [] UMD and ES module builds.
 - [] Benchmark and measure parser.
 - [] Compare against other popular markdown-to-html parsers.
+
+## STATE MACHINE
+
+A state machine is a model of computation based on a hypothetical machine that has finite number of states at any instance of time. For markdown parsing, each state represent as different context in the markdown document ( eg., normal text, inside a header, inside a code block, etc. ). The state machine transitions from one state to another based on the input character.
+
+Key characteristics of state machine:
+
+1. States: Different states in the markdown document. (eg. TEXT, HEADER, CODE, LIST, QUOTE, ETC.)
+2. Transitions: Rules for moviing between states based on the input.
+3. Actions: Operations performed when entering, exiting or within a state.
 
 ## USAGE EXAMPLES
 
