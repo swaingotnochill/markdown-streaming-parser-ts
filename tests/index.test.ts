@@ -13,16 +13,16 @@ describe('MarkdownStreamParser', () => {
 		const input = '# Hello\nWorld!\n```code```\n*emphasis*';
 
 		// Returns an array of tokens after tokenizer.
-		const expected =  [
-			{type: TokenType.HEADER, content: '# Hello' },
-			{type: TokenType.TEXT, content: '\nWorld!\n'},
-			{type: TokenType.CODE_BLOCK, content: '```code```'},
-			{type: TokenType.TEXT, content: '\n'},
-			{type: TokenType.EMPHASIS, content: '*emphasis*' },
+		const expected = [
+			{ type: TokenType.HEADER, content: '# Hello' },
+			{ type: TokenType.TEXT, content: '\nWorld!\n' },
+			{ type: TokenType.CODE_BLOCK, content: '```code```' },
+			{ type: TokenType.TEXT, content: '\n' },
+			{ type: TokenType.EMPHASIS, content: '*emphasis*' },
 		];
 
 		const readable = new Readable();
-		readable._read = () => {}; 	
+		readable._read = () => { };
 		readable.push(input);
 		readable.push(null); // Mark the end of the stream.
 

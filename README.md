@@ -8,9 +8,9 @@ This is a nascent project and not ready to be used in development yet. Wait for 
 
 - [x] Using Node.js built-in Transform stream for efficient processing of large files.
 - [x] Chunking the input stream to minimize memory usage.
-- [] Fast tokenizer that processes the input stream character by character.
-- [] State machine approach for efficient token recognition.
-- [] Recursive descent parser that process the tokens to generate AST.
+- [x] Fast tokenizer that processes the input stream character by character.
+- [x] State machine approach for efficient token recognition.
+- [x] Recursive descent parser that process the tokens to generate AST.
 - [] Single pass approach to minimize the processing time.
 - [] AST walker that converts parsed markdown to HTML.
 - [] String builder for efficient HTML generation.

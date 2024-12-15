@@ -8,8 +8,7 @@ Email: swainroshan@gmail.com
  * Interface: Token.
  * 
  * Represents a token in the markdown document.
- * This interface defines the structure of a token, which is a fundamental unit
- * in the parsing process of markdown text.
+ * This interface defines the structure of a token, which is a fundamental unit in the parsing process of markdown text.
  * 
  * Properties:
  * - type: Indicates the category of the token (e.g., TEXT, HEADER, CODE_BLOCK).
@@ -24,8 +23,8 @@ Email: swainroshan@gmail.com
  */
 
 export interface Token {
-    type: TokenType;
-    content: string;
+	type: TokenType;
+	content: string;
 }
 
 /**
@@ -49,9 +48,9 @@ export interface Token {
  */
 
 export enum TokenType {
-    TEXT,
-    HEADER,
-    CODE_BLOCK,
-    EMPHASIS,
-    UNKNOWN
+	TEXT,
+	HEADER,
+	CODE_BLOCK,
+	EMPHASIS,
+	UNKNOWN
 }
