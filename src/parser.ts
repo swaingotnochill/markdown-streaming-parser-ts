@@ -12,6 +12,7 @@ export enum NodeType {
 	HEADER = 'header',
 	CODE_BLOCK = 'code_block',
 	EMPHASIS = 'emphasis',
+	LINEBREAK = 'linebreak',
 };
 
 export interface ASTNode {
@@ -24,12 +25,24 @@ export interface ASTNode {
 	};
 };
 
+// Parser configuration interface.
+export interface ParserOptions {
+	whitespaceMode: 'preserve' | 'normalize';
+	defaultLineBreaks: 'structural' | 'paragraph';
+}
+
 export class Parser {
 	private tokens: Token[];
 	private current: number = 0;
+	private options: ParserOptions;
 
-	constructor(tokens: Token[]) {
+	constructor(tokens: Token[], options?: Partial<ParserOptions>) {
 		this.tokens = tokens;
+		this.options = {
+			whitespaceMode: 'normalize', // default
+			defaultLineBreaks: 'structural',
+			...options
+		};
 	};
 
 	parse(): ASTNode {
@@ -87,9 +100,20 @@ export class Parser {
 		const token = this.advance();
 		const content = token.content.replace(/^\*|_|\*$|_$/g, '');
 
+		// Split the content by newlines and create text nodes with linebreaks.
+		const lines = content.split('\n').filter(line => line.trim());
+		const children: ASTNode[] = [];
+
+		lines.forEach((line, index) => {
+			if (index > 0) {
+				children.push({ type: NodeType.LINEBREAK });
+			}
+			children.push(this.createTextNode(line.trim()));
+		});
+
 		return {
 			type: NodeType.EMPHASIS,
-			children: [this.createTextNode(content)],
+			children
 		};
 	}
 
@@ -109,20 +133,41 @@ export class Parser {
 
 	private parseParagraph(): ASTNode | null {
 		const token = this.advance();
-		const content = token.content.trim();
+
+		// Handle single newline based on configuration.
+		if (token.content === '\n') {
+			if (this.options.whitespaceMode === 'preserve') {
+				return this.options.defaultLineBreaks === 'structural' ? { type: NodeType.LINEBREAK }
+					: {
+						type: NodeType.PARAGRAPH,
+						children: [{ type: NodeType.LINEBREAK }]
+					};
+			}
+			return null; //normalize mode: skip standalone newlines
+		}
+
+		const content = token.content.split('\n').filter(line => line.trim());
 
 		// returning null for empty paragraphs (just newlines).
 		// will handle new lines later.
-		if (!content) {
+		if (!content || content.length === 0) {
 			return null;
 		}
 
+		// If multiple non-empty lines, create text nodes with line breaks.
+		const children: ASTNode[] = [];
+		content.forEach((line, index) => {
+			if (index > 0) {
+				children.push({ type: NodeType.LINEBREAK });
+			}
+			children.push(this.createTextNode(line.trim()));
+		});
+
 		return {
 			type: NodeType.PARAGRAPH,
-			children: [this.createTextNode(token.content.trim())],
+			children
 		};
 	}
-
 
 	private createTextNode(content: string): ASTNode {
 		return {

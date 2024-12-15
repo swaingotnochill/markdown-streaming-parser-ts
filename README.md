@@ -12,6 +12,7 @@ This is a nascent project and not ready to be used in development yet. Wait for 
 - [x] State machine approach for efficient token recognition.
 - [x] Recursive descent parser that process the tokens to generate AST.
 - [] Single pass approach to minimize the processing time.
+- [] Add all configuration options that allows the users to redner the html accordingly.
 - [] AST walker that converts parsed markdown to HTML.
 - [] String builder for efficient HTML generation.
 - [] Lookup tables for common markdown patterns to minimize processing time.
