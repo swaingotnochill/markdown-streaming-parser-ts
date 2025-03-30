@@ -10,7 +10,7 @@
     "build": "vite build"
   },
   "dependencies": {
-    "markdown-streaming-parser": "file:.."
+    "markdown-streaming-parser": "^0.1.0"
   },
   "devDependencies": {
     "concurrently": "^8.0.1",
