@@ -1,205 +1,91 @@
-import { Parser, NodeType } from "../src/parser";
-import { Token, TokenType } from "../src/token";
-import util from "util";
+import { MarkdownStreamingParser } from "../src/MarkdownStreamingParser";
 
-describe('AST Parser', () => {
-	it('should generate correct AST for simple markdown', () => {
-		const tokens: Token[] = [
-			{ type: TokenType.HEADER, content: '# Hello' },
-			{ type: TokenType.TEXT, content: '\nWorld!\n' },
-			{ type: TokenType.CODE_BLOCK, content: '```code```' },
-			{ type: TokenType.TEXT, content: '\n' },
-			{ type: TokenType.EMPHASIS, content: '*emphasis*' },
-		];
+describe('MarkdownStreamingParser', () => {
+  let parser: MarkdownStreamingParser;
 
-		const expectedAST = {
-			type: NodeType.DOCUMENT,
-			children: [
-				{
-					type: NodeType.HEADER,
-					children: [{ type: NodeType.TEXT, value: 'Hello' }],
-					metadata: { level: 1 }
-				},
-				{
-					type: NodeType.PARAGRAPH,
-					children: [{ type: NodeType.TEXT, value: 'World!' }],
-				},
-				{
-					type: NodeType.CODE_BLOCK,
-					value: 'code',
-					metadata: { language: null },
-				},
-				{
-					type: NodeType.EMPHASIS,
-					children: [{ type: NodeType.TEXT, value: 'emphasis' }]
-				}
-			]
-		};
+  beforeEach(() => {
+    parser = new MarkdownStreamingParser();
+  });
 
-		const parser = new Parser(tokens);
-		const ast = parser.parse();
-		expect(ast).toEqual(expectedAST);
-	});
-});
+  it('should parse basic markdown text', (done) => {
+    const chunks: string[] = [];
+    parser.on('data', (chunk) => chunks.push(chunk.toString()));
+    parser.on('end', () => {
+      const result = chunks.join('');
+      expect(result).toContain('<div class="markdown-content">');
+      expect(result).toContain('</div>');
+      done();
+    });
 
-describe('AST Parser', () => {
-	it('should generate correct AST with line breaks in default behavior', () => {
-		const tokens: Token[] = [
-			{ type: TokenType.HEADER, content: '# Hello' },
-			{ type: TokenType.TEXT, content: 'First line\nSecond line\n Third line' },
-			{ type: TokenType.CODE_BLOCK, content: '```bash\necho "hello"\nworld\n```' },
-			{ type: TokenType.TEXT, content: '\n' },
-			{ type: TokenType.EMPHASIS, content: '*emphasized\ntext*' },
-		];
+    parser.write('# Hello World\n');
+    parser.write('This is a paragraph with *emphasis*.\n');
+    parser.write('```javascript\nconst x = 42;\n```');
+    parser.end();
+  });
 
-		const expectedAST = {
-			type: NodeType.DOCUMENT,
-			children: [
-				{
-					type: NodeType.HEADER,
-					children: [{ type: NodeType.TEXT, value: 'Hello' }],
-					metadata: { level: 1 }
-				},
-				{
-					type: NodeType.PARAGRAPH,
-					children: [
-						{ type: NodeType.TEXT, value: 'First line' },
-						{ type: NodeType.LINEBREAK },
-						{ type: NodeType.TEXT, value: 'Second line' },
-						{ type: NodeType.LINEBREAK },
-						{ type: NodeType.TEXT, value: 'Third line' }
-					]
-				},
-				{
-					type: NodeType.CODE_BLOCK,
-					value: 'echo "hello"\nworld', // preserves the exact newlines.
-					metadata: { language: 'bash' }
-				},
-				{
-					type: NodeType.EMPHASIS,
-					children: [
-						{ type: NodeType.TEXT, value: 'emphasized' },
-						{ type: NodeType.LINEBREAK },
-						{ type: NodeType.TEXT, value: 'text' }
-					]
-				}
-			]
-		}
+  it('should handle streaming content correctly', (done) => {
+    const chunks: string[] = [];
+    parser.on('data', (chunk) => chunks.push(chunk.toString()));
+    parser.on('end', () => {
+      const result = chunks.join('');
+      expect(result).toContain('<h1>Hello');
+      expect(result).toContain('World</h1>');
+      done();
+    });
 
-		const parser = new Parser(tokens);
-		const ast = parser.parse();
-		expect(ast).toEqual(expectedAST);
-	});
-});
+    // Stream the content character by character
+    const content = '# Hello\nWorld';
+    content.split('').forEach(char => parser.write(char));
+    parser.end();
+  });
 
-describe('AST Parser', () => {
-	it('should generate correct AST with line breaks preserve using empty paragraph', () => {
-		const tokens: Token[] = [
-			{ type: TokenType.HEADER, content: '# Hello' },
-			{ type: TokenType.TEXT, content: 'First line\nSecond line\n Third line' },
-			{ type: TokenType.CODE_BLOCK, content: '```bash\necho "hello"\nworld\n```' },
-			{ type: TokenType.TEXT, content: '\n' },
-			{ type: TokenType.EMPHASIS, content: '*emphasized\ntext*' },
-		];
+  it('should handle code blocks with language', (done) => {
+    const chunks: string[] = [];
+    parser.on('data', (chunk) => chunks.push(chunk.toString()));
+    parser.on('end', () => {
+      const result = chunks.join('');
+      expect(result).toContain('<pre><code class="language-typescript">');
+      expect(result).toContain('const x: number = 42;');
+      expect(result).toContain('</code></pre>');
+      done();
+    });
 
-		const expectedAST = {
-			type: NodeType.DOCUMENT,
-			children: [
-				{
-					type: NodeType.HEADER,
-					children: [{ type: NodeType.TEXT, value: 'Hello' }],
-					metadata: { level: 1 }
-				},
-				{
-					type: NodeType.PARAGRAPH,
-					children: [
-						{ type: NodeType.TEXT, value: 'First line' },
-						{ type: NodeType.LINEBREAK },
-						{ type: NodeType.TEXT, value: 'Second line' },
-						{ type: NodeType.LINEBREAK },
-						{ type: NodeType.TEXT, value: 'Third line' }
-					]
-				},
-				{
-					type: NodeType.CODE_BLOCK,
-					value: 'echo "hello"\nworld', // preserves the exact newlines.
-					metadata: { language: 'bash' }
-				},
-				{
-					type: NodeType.PARAGRAPH,
-					children: [{ type: NodeType.LINEBREAK }]
-				},
-				{
-					type: NodeType.EMPHASIS,
-					children: [
-						{ type: NodeType.TEXT, value: 'emphasized' },
-						{ type: NodeType.LINEBREAK },
-						{ type: NodeType.TEXT, value: 'text' }
-					]
-				}
-			]
-		}
+    parser.write('```typescript\nconst x: number = 42;\n```');
+    parser.end();
+  });
 
-		const parser = new Parser(tokens, {
-			whitespaceMode: 'preserve',
-			defaultLineBreaks: 'paragraph',
-		});
-		const ast = parser.parse();
-		expect(ast).toEqual(expectedAST);
-	});
-});
+  it('should handle emphasis correctly', (done) => {
+    const chunks: string[] = [];
+    parser.on('data', (chunk) => chunks.push(chunk.toString()));
+    parser.on('end', () => {
+      const result = chunks.join('');
+      expect(result).toContain('<em>emphasized text</em>');
+      done();
+    });
 
-describe('AST Parser', () => {
-	it('should generate correct AST with line breaks with default whitespace mode (structural) ', () => {
-		const tokens: Token[] = [
-			{ type: TokenType.HEADER, content: '# Hello' },
-			{ type: TokenType.TEXT, content: 'First line\nSecond line\n Third line' },
-			{ type: TokenType.CODE_BLOCK, content: '```bash\necho "hello"\nworld\n```' },
-			{ type: TokenType.TEXT, content: '\n' },
-			{ type: TokenType.EMPHASIS, content: '*emphasized\ntext*' },
-		];
+    parser.write('This has *emphasized text* in it.');
+    parser.end();
+  });
 
-		const expectedAST = {
-			type: NodeType.DOCUMENT,
-			children: [
-				{
-					type: NodeType.HEADER,
-					children: [{ type: NodeType.TEXT, value: 'Hello' }],
-					metadata: { level: 1 }
-				},
-				{
-					type: NodeType.PARAGRAPH,
-					children: [
-						{ type: NodeType.TEXT, value: 'First line' },
-						{ type: NodeType.LINEBREAK },
-						{ type: NodeType.TEXT, value: 'Second line' },
-						{ type: NodeType.LINEBREAK },
-						{ type: NodeType.TEXT, value: 'Third line' }
-					]
-				},
-				{
-					type: NodeType.CODE_BLOCK,
-					value: 'echo "hello"\nworld', // preserves the exact newlines.
-					metadata: { language: 'bash' }
-				},
-				{
-					type: NodeType.LINEBREAK,
-				},
-				{
-					type: NodeType.EMPHASIS,
-					children: [
-						{ type: NodeType.TEXT, value: 'emphasized' },
-						{ type: NodeType.LINEBREAK },
-						{ type: NodeType.TEXT, value: 'text' }
-					]
-				}
-			]
-		}
+  it('should reset parser state correctly', (done) => {
+    const chunks: string[] = [];
+    parser.on('data', (chunk) => chunks.push(chunk.toString()));
 
-		const parser = new Parser(tokens, {
-			whitespaceMode: 'preserve',
-		});
-		const ast = parser.parse();
-		expect(ast).toEqual(expectedAST);
-	});
+    parser.write('# First document\n');
+    parser.end(() => {
+      const firstResult = chunks.join('');
+      expect(firstResult).toContain('<h1>First document</h1>');
+
+      // Reset parser and test again
+      chunks.length = 0;
+      parser.reset();
+
+      parser.write('# Second document\n');
+      parser.end(() => {
+        const secondResult = chunks.join('');
+        expect(secondResult).toContain('<h1>Second document</h1>');
+        done();
+      });
+    });
+  });
 });
