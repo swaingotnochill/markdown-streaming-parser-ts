@@ -1,6 +1,10 @@
-const http = require('http');
-const fs = require('fs');
-const path = require('path');
+import http from 'http';
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const PORT = 3000;
 
@@ -22,14 +26,6 @@ const MARKDOWN_CHUNKS = [
   "This demonstrates how the markdown-streaming-parser can be used to render markdown content as it arrives, without waiting for the entire document.\n"
 ];
 
-const CONTENT_TYPES = {
-  '.html': 'text/html',
-  '.js': 'text/javascript',
-  '.css': 'text/css',
-  '.json': 'application/json',
-  '.md': 'text/markdown',
-};
-
 const server = http.createServer((req, res) => {
   console.log(`${req.method} ${req.url}`);
 
@@ -38,6 +34,7 @@ const server = http.createServer((req, res) => {
     res.setHeader('Content-Type', 'text/markdown');
     res.setHeader('Cache-Control', 'no-cache');
     res.setHeader('Connection', 'keep-alive');
+    res.setHeader('Access-Control-Allow-Origin', '*');
     
     let chunkIndex = 0;
     
@@ -59,33 +56,12 @@ const server = http.createServer((req, res) => {
     return;
   }
   
-  // Serve static files
-  let filePath = req.url;
-  if (filePath === '/') {
-    filePath = '/index.html';
-  }
-  
-  filePath = path.join(__dirname, '..', filePath);
-  
-  const extname = String(path.extname(filePath)).toLowerCase();
-  const contentType = CONTENT_TYPES[extname] || 'application/octet-stream';
-  
-  fs.readFile(filePath, (error, content) => {
-    if (error) {
-      if (error.code === 'ENOENT') {
-        res.writeHead(404);
-        res.end('404 Not Found');
-      } else {
-        res.writeHead(500);
-        res.end('500 Internal Server Error');
-      }
-    } else {
-      res.writeHead(200, { 'Content-Type': contentType });
-      res.end(content, 'utf-8');
-    }
-  });
+  // For other routes, we'll leave handling to Vite dev server
+  res.writeHead(404);
+  res.end('Not found');
 });
 
 server.listen(PORT, () => {
-  console.log(`Server running at http://localhost:${PORT}/`);
+  console.log(`Markdown API server running at http://localhost:${PORT}/api/markdown-stream`);
+  console.log(`Frontend is served by Vite on a different port`);
 });

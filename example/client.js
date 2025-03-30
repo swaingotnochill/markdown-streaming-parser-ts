@@ -1,3 +1,5 @@
+import { createMarkdownParser } from './src/client-parser.js';
+
 document.addEventListener('DOMContentLoaded', () => {
   // DOM Elements
   const rawMarkdownElement = document.getElementById('raw-markdown');
@@ -6,7 +8,6 @@ document.addEventListener('DOMContentLoaded', () => {
   const resetButton = document.getElementById('reset');
   
   // Variables
-  let currentStream = null;
   let markdownParser = null;
   let rawMarkdownContent = '';
   
@@ -24,11 +25,11 @@ document.addEventListener('DOMContentLoaded', () => {
     renderedHtmlElement.innerHTML = '';
     
     // Create a new parser instance
-    markdownParser = new MarkdownStreamingParser();
+    markdownParser = createMarkdownParser();
     
     // Handle parsed HTML output
     markdownParser.on('data', chunk => {
-      renderedHtmlElement.innerHTML = chunk.toString();
+      renderedHtmlElement.innerHTML += chunk.toString();
     });
     
     // Fetch the markdown stream
@@ -89,49 +90,5 @@ document.addEventListener('DOMContentLoaded', () => {
       markdownParser.end();
       markdownParser = null;
     }
-  }
-  
-  // Helper function for browser compatibility
-  function MarkdownStreamingParser() {
-    // If the bundled parser is available, use it
-    if (typeof window.markdownStreamingParser !== 'undefined') {
-      return new window.markdownStreamingParser.MarkdownStreamingParser();
-    }
-    
-    // Fallback: create a simple event emitter that transforms markdown to HTML
-    const eventHandlers = {};
-    const parser = {
-      write: function(chunk) {
-        // Very basic markdown to HTML conversion for demonstration
-        // In a real app, you'd use the actual parser
-        let html = chunk
-          .replace(/^# (.*$)/gm, '<h1>$1</h1>')
-          .replace(/^## (.*$)/gm, '<h2>$1</h2>')
-          .replace(/^### (.*$)/gm, '<h3>$1</h3>')
-          .replace(/\*\*(.*)\*\*/gm, '<strong>$1</strong>')
-          .replace(/\*(.*)\*/gm, '<em>$1</em>')
-          .replace(/```([\s\S]*?)```/gm, '<pre><code>$1</code></pre>')
-          .replace(/^\* (.*$)/gm, '<li>$1</li>')
-          .split('\n\n').join('<br>');
-          
-        if (eventHandlers.data) {
-          eventHandlers.data.forEach(handler => handler('<div class="markdown-content">' + html + '</div>'));
-        }
-      },
-      end: function() {
-        if (eventHandlers.end) {
-          eventHandlers.end.forEach(handler => handler());
-        }
-      },
-      on: function(event, handler) {
-        if (!eventHandlers[event]) {
-          eventHandlers[event] = [];
-        }
-        eventHandlers[event].push(handler);
-        return this;
-      }
-    };
-    
-    return parser;
   }
 });
