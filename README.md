@@ -1,69 +1,100 @@
-# markdown-streaming-parser-ts (in development)
+# Markdown Streaming Parser
 
-This is a npm package that can be used to stream tokens and render markdown efficiently.
+A lightweight, memory-efficient streaming parser for Markdown content that supports real-time rendering.
 
-This is a nascent project and not ready to be used in development yet. Wait for the first minor release (0.1.0) to be able to import and use it.
+## Features
 
-## DESIGN
+- Stream-based processing for Markdown content
+- Memory efficient for large documents
+- Real-time rendering of content as it arrives
+- Support for basic Markdown elements (headers, paragraphs, code blocks, emphasis)
+- Customizable rendering options
 
-- [x] Using Node.js built-in Transform stream for efficient processing of large files.
-- [x] Chunking the input stream to minimize memory usage.
-- [x] Fast tokenizer that processes the input stream character by character.
-- [x] State machine approach for efficient token recognition.
-- [x] Recursive descent parser that process the tokens to generate AST.
-- [] Single pass approach to minimize the processing time.
-- [] Add all configuration options that allows the users to redner the html accordingly.
-- [] AST walker that converts parsed markdown to HTML.
-- [] String builder for efficient HTML generation.
-- [] Lookup tables for common markdown patterns to minimize processing time.
-- [] Character level parsing instead of regex for performance.
-- [] Minimize object creations and garbage collection pauses by using primitive values and avoiding extra abstractions.
+## Installation
 
-## BASE GUIDELINES FOR DEVELOPMENT
-
-- [] Compile to both CommonJS and ES modules for max compatibility.
-- [] Using native JS/TS features.
-- [] No external dependencies.
-- [] Bundling like rollup.
-- [] UMD and ES module builds.
-- [] Benchmark and measure parser.
-- [] Compare against other popular markdown-to-html parsers.
-
-## STATE MACHINE
-
-A state machine is a model of computation based on a hypothetical machine that has finite number of states at any instance of time. For markdown parsing, each state represent as different context in the markdown document ( eg., normal text, inside a header, inside a code block, etc. ). The state machine transitions from one state to another based on the input character.
-
-Key characteristics of state machine:
-
-1. States: Different states in the markdown document. (eg. TEXT, HEADER, CODE, LIST, QUOTE, ETC.)
-2. Transitions: Rules for moviing between states based on the input.
-3. Actions: Operations performed when entering, exiting or within a state.
-
-## USAGE
-
-```TS
-import { MarkdownStreamParser } from "markdown-streaming-parser-ts";
-import {Readable} from "stream";
-
-const input = '# Hello\nWorld!\n`code`\n*emphasis*';
-const readable = new Readable();
-readable._read = () => {};
-readable.push(input);
-readable.push(null);
-const parser = new MarkdownStreamParser();
-
-readable.pipe(parser)
-.on('data', (chunk) => {
-    console.log(JSON.parse(chunk));
-})
-.on('end', () => {
-    console.log('Parsing complete');
-})
+```bash
+npm install markdown-streaming-parser
 ```
 
-## USAGE EXAMPLES
+## Basic Usage
 
-- [] Simple ChatGPT LLM streaming markdown and rendering on html.
+```typescript
+import { MarkdownStreamingParser } from 'markdown-streaming-parser';
+import { createReadStream } from 'fs';
+
+// Create a streaming parser
+const parser = new MarkdownStreamingParser();
+
+// Set up data handling
+parser.on('data', (html) => {
+  console.log('Rendered HTML:', html);
+});
+
+// Create a readable stream from a Markdown file
+const markdownStream = createReadStream('document.md', 'utf-8');
+
+// Pipe the Markdown content through the parser
+markdownStream.pipe(parser);
+```
+
+## API Reference
+
+### MarkdownStreamingParser
+
+The main class that handles streaming of markdown content and transforms it into HTML.
+
+```typescript
+import { MarkdownStreamingParser, MarkdownParserOptions } from 'markdown-streaming-parser';
+
+// Create with default options
+const parser = new MarkdownStreamingParser();
+
+// Or with custom options
+const parserWithOptions = new MarkdownStreamingParser({
+  parserOptions: {
+    // Custom parser options
+  }
+});
+```
+
+#### Methods
+
+- `write(chunk: string | Buffer)`: Write a chunk of markdown content to the parser
+- `end()`: Signal the end of the markdown content
+- `reset()`: Reset the parser state
+
+### Usage with Web Streams
+
+You can use this parser with the Web Streams API for browser-based applications:
+
+```typescript
+// Example with fetch and streams
+async function fetchAndParseMarkdown(url) {
+  const response = await fetch(url);
+  const reader = response.body.getReader();
+  const parser = new MarkdownStreamingParser();
+  
+  // Process the stream
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    
+    // Convert Uint8Array to string and feed to parser
+    const chunk = new TextDecoder().decode(value);
+    parser.write(chunk);
+  }
+  
+  parser.end();
+}
+```
+
+## Example
+
+See the [example](./example) directory for a complete example of a server streaming markdown content to a browser client.
+
+## License
+
+MIT
 
 Author:
 Roshan Swain

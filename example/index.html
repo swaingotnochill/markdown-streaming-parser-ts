@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Markdown Streaming Parser Demo</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header>
+        <h1>Markdown Streaming Parser</h1>
+        <p>Watch as markdown content is streamed and rendered in real-time</p>
+    </header>
+    
+    <main>
+        <div class="content-wrapper">
+            <div class="col">
+                <h2>Raw Markdown</h2>
+                <div id="raw-markdown" class="content-box"></div>
+            </div>
+            <div class="col">
+                <h2>Rendered HTML</h2>
+                <div id="rendered-html" class="content-box"></div>
+            </div>
+        </div>
+        
+        <div class="controls">
+            <button id="start-stream">Start Streaming</button>
+            <button id="reset">Reset</button>
+        </div>
+    </main>
+    
+    <footer>
+        <p>Powered by <a href="https://github.com/swaingotnochill/markdown-streaming-parser-ts">markdown-streaming-parser</a></p>
+    </footer>
+    
+    <!-- Include the bundled parser from node_modules -->
+    <script src="parser-bundle.js"></script>
+    <script src="client.js"></script>
+</body>
+</html>

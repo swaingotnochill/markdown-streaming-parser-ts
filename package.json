@@ -1,27 +1,40 @@
 {
-  "name": "markdown-streaming-parser-ts",
-  "version": "0.0.1",
-  "description": "Fast and efficient streaming markdown parser.",
+  "name": "markdown-streaming-parser",
+  "version": "0.1.0",
+  "description": "A streaming parser for markdown content with optimized memory usage",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
     "build": "tsc",
     "test": "jest",
-    "prepublishOnly": "npm run build",
-    "publish": "npm run build && npm test"
+    "prepare": "npm run build",
+    "prepublishOnly": "npm test",
+    "example": "cd example && npm run start"
   },
-  "keywords": ["markdown", "parser", "streaming", "ts", "fast"],
-  "author": "Roshan Swain",
-  "email": "swainroshan001@gmail.com",
-  "license": "ISC",
-  "files": [
-    "dist"
+  "keywords": [
+    "markdown",
+    "streaming",
+    "parser",
+    "typescript",
+    "real-time"
   ],
+  "author": "Roshan Swain <swainroshan@gmail.com>",
+  "license": "MIT",
   "devDependencies": {
-    "@types/jest": "^29.5.12",
-    "@types/node": "^22.5.0",
-    "jest": "^29.7.0",
-    "ts-jest": "^29.2.5",
-    "typescript": "^5.5.4"
+    "@types/jest": "^29.5.0",
+    "@types/node": "^18.15.11",
+    "jest": "^29.5.0",
+    "ts-jest": "^29.1.0",
+    "typescript": "^5.0.3"
+  },
+  "files": [
+    "dist/**/*"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/swaingotnochill/markdown-streaming-parser-ts.git"
+  },
+  "engines": {
+    "node": ">=12.0.0"
   }
 }
