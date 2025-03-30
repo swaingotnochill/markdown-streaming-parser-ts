@@ -1,137 +1,214 @@
 /** 
-Author: Roshan Swain
-Email: swainroshan@gmail.com
-*/
-
-import { Token, TokenType } from "./token";
-
-/**
- * Enum: TokenizerState.
- * 
- * Enumerates the different states of the tokenizer.
- * 
- * @since 0.0.1
+ * Author: Roshan Swain
+ * Email: swainroshan@gmail.com
  */
-enum TokenizerState {
-  TEXT,
-  HEADER,
-  CODE_BLOCK,
-  EMPHASIS
+
+export enum TokenType {
+  TEXT = 0,
+  HEADER = 1,
+  CODE_BLOCK = 2,
+  EMPHASIS = 3
 }
 
-/**
- * class : Tokenizer
- * 
- * This is the main tokenizer class which converts the input text/buffer into corresponding tokens.
- * 
- * @since 0.0.1
- */
+export interface Token {
+  type: TokenType;
+  content: string;
+}
+
 export class Tokenizer {
   private buffer: string;
   private position: number;
-  private state: TokenizerState;
-  private startPosition: number;
+  private pendingContent: string;
 
   constructor() {
-    this.buffer = "";
+    this.buffer = '';
     this.position = 0;
-    this.startPosition = 0;
-    this.state = TokenizerState.TEXT;
-  }
-
-  private peek(ahead: number = 1): string {
-    if (this.position + ahead > this.buffer.length) return '';
-    return this.buffer.slice(this.position, this.position + ahead);
-  }
-
-  private createToken(type: TokenType): Token {
-    const content = this.buffer.slice(this.startPosition, this.position);
-    this.startPosition = this.position;
-    return { type, content };
+    this.pendingContent = '';
   }
 
   tokenize(input: string, isEnd: boolean): Token[] {
-    this.buffer += input;
+    // Append incoming content to any pending content
+    this.buffer = this.pendingContent + input;
+    this.position = 0;
+    this.pendingContent = '';
+    
     const tokens: Token[] = [];
+    
+    // Don't attempt to tokenize if we don't have enough content and not at the end
+    if (this.buffer.length === 0) {
+      return tokens;
+    }
+    
+    // In streaming mode, don't process incomplete headers
+    if (!isEnd && this.buffer.indexOf('\n') === -1 && this.buffer.startsWith('#')) {
+      this.pendingContent = this.buffer;
+      return tokens;
+    }
 
     while (this.position < this.buffer.length) {
       const char = this.buffer[this.position];
+      const isAtLineStart = this.position === 0 || this.buffer[this.position - 1] === '\n';
 
-      switch (this.state) {
-        case TokenizerState.TEXT:
-          if (char === '#') {
-            if (this.position > this.startPosition) {
-              tokens.push(this.createToken(TokenType.TEXT));
-            }
-            this.state = TokenizerState.HEADER;
-            this.startPosition = this.position;
-          } else if (char === '`' && this.peek(3) === '```') {
-            if (this.position > this.startPosition) {
-              tokens.push(this.createToken(TokenType.TEXT));
-            }
-            this.state = TokenizerState.CODE_BLOCK;
-            this.startPosition = this.position;
-          } else if (char === '*' || char === '_') {
-            if (this.position > this.startPosition) {
-              tokens.push(this.createToken(TokenType.TEXT));
-            }
-            this.state = TokenizerState.EMPHASIS;
-            this.startPosition = this.position;
-          } else {
-            this.position++;
-          }
-          break;
-
-        case TokenizerState.HEADER:
-          if (char === '\n' || (isEnd && this.position === this.buffer.length - 1)) {
-            this.position++;
-            tokens.push(this.createToken(TokenType.HEADER));
-            this.state = TokenizerState.TEXT;
-          } else {
-            this.position++;
-          }
-          break;
-
-        case TokenizerState.CODE_BLOCK:
-          if (this.peek(3) === '```' && (this.position > this.startPosition + 2)) {
-            this.position += 3;
-            tokens.push(this.createToken(TokenType.CODE_BLOCK));
-            this.state = TokenizerState.TEXT;
-          } else {
-            this.position++;
-          }
-          break;
-
-        case TokenizerState.EMPHASIS:
-          const marker = this.buffer[this.startPosition];
-          if (char === marker && this.position > this.startPosition) {
-            this.position++;
-            tokens.push(this.createToken(TokenType.EMPHASIS));
-            this.state = TokenizerState.TEXT;
-          } else if (char === '\n' || (isEnd && this.position === this.buffer.length - 1)) {
-            // If we hit a newline without finding the closing marker, treat it as text
-            this.state = TokenizerState.TEXT;
-            this.position = this.startPosition + 1;
-          } else {
-            this.position++;
-          }
-          break;
+      if (char === '#' && isAtLineStart) {
+        this.tokenizeHeader(tokens, isEnd);
+      } else if (char === '`' && this.checkTripleBackticks()) {
+        this.tokenizeCodeBlock(tokens, isEnd);
+      } else if (char === '*' || char === '_') {
+        this.tokenizeEmphasis(tokens, isEnd);
+      } else {
+        this.tokenizeText(tokens);
       }
     }
 
-    // If we're at the end of input, emit any remaining content as a token
-    if (isEnd && this.position > this.startPosition) {
-      tokens.push(this.createToken(this.state === TokenizerState.TEXT ? TokenType.TEXT : TokenType.EMPHASIS));
-    }
-
-    // Only clear the buffer if we're at the end
-    if (isEnd) {
-      this.buffer = "";
-      this.position = 0;
-      this.startPosition = 0;
-      this.state = TokenizerState.TEXT;
+    // In streaming mode, save any pending content for next chunk
+    if (!isEnd && this.pendingContent.length > 0) {
+      this.buffer = this.pendingContent;
+      this.pendingContent = '';
     }
 
     return tokens;
+  }
+
+  private tokenizeHeader(tokens: Token[], isEnd: boolean): void {
+    const start = this.position;
+    let endOfHeader = this.buffer.indexOf('\n', start);
+    
+    // If no newline and not at end, store as pending
+    if (endOfHeader === -1 && !isEnd) {
+      this.pendingContent = this.buffer.slice(start);
+      this.position = this.buffer.length;
+      return;
+    }
+    
+    // If no newline but at end, process the full content
+    if (endOfHeader === -1 && isEnd) {
+      endOfHeader = this.buffer.length;
+    }
+    
+    const content = this.buffer.slice(start, endOfHeader).trim();
+    tokens.push({ type: TokenType.HEADER, content });
+    
+    // Move past the header and newline
+    this.position = endOfHeader + 1;
+    
+    // If there's text after the header, add it as a TEXT token
+    if (this.position < this.buffer.length) {
+      let nextSpecialChar = this.findNextSpecialCharPosition();
+      if (nextSpecialChar === -1) nextSpecialChar = this.buffer.length;
+      
+      const textContent = this.buffer.slice(this.position, nextSpecialChar);
+      if (textContent.length > 0) {
+        tokens.push({ type: TokenType.TEXT, content: textContent });
+        this.position = nextSpecialChar;
+      }
+    }
+  }
+
+  private tokenizeCodeBlock(tokens: Token[], isEnd: boolean): void {
+    const start = this.position;
+    const openingBackticks = this.position;
+    
+    // Skip opening ```
+    this.position += 3;
+    
+    // Find closing ```
+    let closingBackticks = this.buffer.indexOf('```', this.position);
+    
+    // If no closing ``` and not at end, store as pending
+    if (closingBackticks === -1 && !isEnd) {
+      this.pendingContent = this.buffer.slice(start);
+      this.position = this.buffer.length;
+      return;
+    }
+    
+    // If no closing ``` but at end, mark the whole rest as code block
+    if (closingBackticks === -1 && isEnd) {
+      closingBackticks = this.buffer.length - 3;
+    }
+    
+    // Skip to after the closing ```
+    this.position = closingBackticks + 3;
+    
+    const content = this.buffer.slice(openingBackticks, this.position);
+    tokens.push({ type: TokenType.CODE_BLOCK, content });
+  }
+
+  private tokenizeEmphasis(tokens: Token[], isEnd: boolean): void {
+    const start = this.position;
+    const marker = this.buffer[this.position];
+    
+    // Skip opening * or _
+    this.position++;
+    
+    // Find closing * or _
+    let closingMarker = this.buffer.indexOf(marker, this.position);
+    
+    // If no closing marker and not at end, store as pending
+    if (closingMarker === -1 && !isEnd) {
+      this.pendingContent = this.buffer.slice(start);
+      this.position = this.buffer.length;
+      return;
+    }
+    
+    // If no closing marker but at end, mark the whole rest as emphasis
+    if (closingMarker === -1 && isEnd) {
+      closingMarker = this.buffer.length - 1;
+    }
+    
+    // Skip to after the closing marker
+    this.position = closingMarker + 1;
+    
+    const content = this.buffer.slice(start, this.position);
+    tokens.push({ type: TokenType.EMPHASIS, content });
+  }
+
+  private tokenizeText(tokens: Token[]): void {
+    const start = this.position;
+    
+    // Find the next special character
+    const nextPos = this.findNextSpecialCharPosition();
+    
+    if (nextPos === -1) {
+      // No more special characters, consume the rest
+      this.position = this.buffer.length;
+    } else {
+      this.position = nextPos;
+    }
+    
+    if (this.position > start) {
+      const content = this.buffer.slice(start, this.position);
+      tokens.push({ type: TokenType.TEXT, content });
+    }
+  }
+
+  private findNextSpecialCharPosition(): number {
+    let pos = this.position;
+    
+    while (pos < this.buffer.length) {
+      const char = this.buffer[pos];
+      const isAtLineStart = pos === 0 || this.buffer[pos - 1] === '\n';
+      
+      if ((char === '#' && isAtLineStart) || 
+          (char === '`' && this.checkTripleBackticksAt(pos)) || 
+          char === '*' || 
+          char === '_') {
+        return pos;
+      }
+      
+      pos++;
+    }
+    
+    return -1;
+  }
+
+  private checkTripleBackticks(): boolean {
+    return this.checkTripleBackticksAt(this.position);
+  }
+
+  private checkTripleBackticksAt(pos: number): boolean {
+    return pos + 2 < this.buffer.length && 
+           this.buffer[pos] === '`' && 
+           this.buffer[pos + 1] === '`' && 
+           this.buffer[pos + 2] === '`';
   }
 }
