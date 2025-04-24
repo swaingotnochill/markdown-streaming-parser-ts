@@ -1,3 +1,5 @@
+NOTE: Markdown streaming parser is still in development and not production ready. I am working on fixing some bugs for the next minor release.
+
 # Markdown Streaming Parser
 
 A lightweight, memory-efficient streaming parser for Markdown content that supports real-time rendering.
